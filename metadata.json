@@ -1,0 +1,6 @@
+{
+  "name": "Leba Wings - Sistema Gastronómico",
+  "description": "Sistema integral de punto de venta para meseros, KDS inteligente con cola de prioridad por peso y dashboard de inventario booleano para Leba Wings & Beer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
