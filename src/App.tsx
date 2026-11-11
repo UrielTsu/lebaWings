@@ -171,7 +171,7 @@ export default function App() {
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h1 className="text-sm sm:text-base font-black tracking-wider text-white">LEBA WINGS</h1>
+                    <h1 className="text-sm sm:text-base font-black tracking-wider text-white">LEBA WINGSs</h1>
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-slate-400 hidden sm:block">
                     KDS Cocina • App Meseros • Inventario & Pesos
