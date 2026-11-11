@@ -1,0 +1,20 @@
+{
+  "name": "Leba Wings - Sistema Gastronomico",
+  "short_name": "Leba Wings",
+  "description": "Sistema de comandas, cocina e inventario de Leba Wings.",
+  "lang": "es-MX",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0f172a",
+  "background_color": "#f1f5f9",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

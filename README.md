@@ -2,19 +2,33 @@
 <img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
 </div>
 
-# Run and deploy your AI Studio app
+# Leba Wings
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/b9ab103d-d398-4021-b91b-662aa59c9914
+Sistema web para comandas, cocina e inventario de Leba Wings.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js 18+
 
 
-1. Install dependencies:
+1. Instalar dependencias:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Ejecutar en desarrollo:
    `npm run dev`
+3. Generar la versión de producción:
+   `npm run build`
+
+## PWA
+
+La aplicación incluye un manifest y un Service Worker para instalación y
+funcionamiento básico del shell sin conexión. El Service Worker se registra
+solamente en producción; para probar la instalación:
+
+```bash
+npm run build
+npm run preview
+```
+
+La instalación y el Service Worker requieren HTTPS en producción (localhost es
+la excepción). Los datos operativos todavía deben conectarse a la API PHP para
+habilitar sincronización de comandas entre dispositivos.
