@@ -1,13 +1,28 @@
+# Dependencias (Vite, React Native y PHP)
 node_modules/
-dist/
+vendor/
 
+# Compilaciones y caché
+dist/
+.vercel/
+.expo/
+*.tsbuildinfo
+
+# Variables de entorno y credenciales
 .env
 .env.*
 !.env.example
+# Descomenta la siguiente línea si Database.php tiene contraseñas escritas directamente:
+# backend-php/config/Database.php
 
-.vercel/
-
+# Archivos locales de herramientas y base de datos
+*.session.sql
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
