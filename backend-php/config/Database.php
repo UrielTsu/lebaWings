@@ -12,11 +12,11 @@ class Database {
     public static function getConnection(): PDO {
         if (self::$instance === null) {
             $driver = getenv('DB_DRIVER') ?: 'mysql';
-            $host = getenv('DB_HOST') ?: '127.0.0.1';
-            $port = getenv('DB_PORT') ?: '3306';
-            $db   = getenv('DB_NAME') ?: 'leba_wings';
-            $user = getenv('DB_USER') ?: 'root';
-            $pass = getenv('DB_PASS') ?: '';
+            $host = getenv('DB_HOST') ?: (getenv('MYSQLHOST') ?: '127.0.0.1');
+            $port = getenv('DB_PORT') ?: (getenv('MYSQLPORT') ?: '3306');
+            $db   = getenv('DB_NAME') ?: (getenv('MYSQLDATABASE') ?: 'leba_wings');
+            $user = getenv('DB_USER') ?: (getenv('MYSQLUSER') ?: 'root');
+            $pass = getenv('DB_PASS') ?: (getenv('MYSQLPASSWORD') ?: '');
             $charset = 'utf8mb4';
 
             $options = [
