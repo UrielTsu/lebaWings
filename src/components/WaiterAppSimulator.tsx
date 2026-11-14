@@ -4,7 +4,7 @@ import { ShoppingBag, Plus, Minus, Trash2, Send, AlertCircle, Check, Smartphone,
 
 interface Props {
   menu: MenuItem[];
-  onOrderCreated: (newOrder: Order) => void;
+  onOrderCreated: (newOrder: Order) => Promise<void>;
   currentUser?: UserProfile | null;
 }
 
@@ -124,7 +124,7 @@ export const WaiterAppSimulator: React.FC<Props> = ({ menu, onOrderCreated, curr
   const totalWeight = cart.reduce((sum, ci) => sum + ci.menu_item.prep_weight * ci.quantity, 0);
   const totalItemsCount = cart.reduce((sum, ci) => sum + ci.quantity, 0);
 
-  const handleSendComanda = () => {
+  const handleSendComanda = async () => {
     if (cart.length === 0) return;
 
     const hasSoldOut = cart.some((ci) => !ci.menu_item.is_available);
@@ -156,11 +156,16 @@ export const WaiterAppSimulator: React.FC<Props> = ({ menu, onOrderCreated, curr
       items: orderItems,
     };
 
-    onOrderCreated(newOrder);
-    setCart([]);
-    setOrderNotes('');
-    setSuccessToast(`¡Comanda #${orderId} enviada a Cocina para ${selectedTable}!`);
-    setTimeout(() => setSuccessToast(null), 4000);
+    try {
+      await onOrderCreated(newOrder);
+      setCart([]);
+      setOrderNotes('');
+      setSuccessToast(`¡Comanda enviada a Cocina para ${selectedTable}!`);
+      setTimeout(() => setSuccessToast(null), 4000);
+    } catch (error) {
+      console.error('[LebaWings] No se pudo enviar la comanda:', error);
+      alert('No se pudo enviar la comanda a cocina. Revisa la conexión con Railway.');
+    }
   };
 
   const getWeightTag = (w: number) => {

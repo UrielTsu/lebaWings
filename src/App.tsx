@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { INITIAL_MENU, INITIAL_ORDERS } from './data/initialData';
 import { MenuItem, Order, OrderStatus, PrepWeight, UserProfile, UserRole } from './types/restaurant';
+import { createOrder, getKitchenQueue, getMenu, toggleStock, updateOrderStatus, updateWeight } from './services/api';
 import { KdsView } from './components/KdsView';
 import { WaiterAppSimulator } from './components/WaiterAppSimulator';
 import { AdminInventoryView } from './components/AdminInventoryView';
@@ -38,6 +39,21 @@ export default function App() {
   const [menu, setMenu] = useState<MenuItem[]>(INITIAL_MENU);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
 
+  useEffect(() => {
+    const loadRemoteData = async () => {
+      try {
+        const [remoteMenu, remoteOrders] = await Promise.all([getMenu(), getKitchenQueue()]);
+        const localMetadata = new Map(INITIAL_MENU.map((item) => [item.id, item]));
+        setMenu(remoteMenu.map((item) => ({ ...localMetadata.get(item.id), ...item })));
+        setOrders(remoteOrders);
+      } catch (error) {
+        console.error('[LebaWings] No se pudo cargar Railway:', error);
+      }
+    };
+
+    loadRemoteData();
+  }, []);
+
   // Manejar Login / Cambio de Rol
   const handleLogin = (user: UserProfile) => {
     setCurrentUser(user);
@@ -67,16 +83,29 @@ export default function App() {
   }, [currentUser, activeTab]);
 
   // 1. Alternar Inventario Booleano (Disponible / Agotado)
-  const handleToggleStock = (id: number) => {
-    setMenu((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, is_available: !item.is_available } : item
-      )
-    );
+  const handleToggleStock = async (id: number) => {
+    const item = menu.find((menuItem) => menuItem.id === id);
+    if (!item) return;
+
+    try {
+      await toggleStock(id, !item.is_available);
+      setMenu((prev) => prev.map((current) =>
+        current.id === id ? { ...current, is_available: !item.is_available } : current
+      ));
+    } catch (error) {
+      console.error('[LebaWings] No se pudo actualizar disponibilidad:', error);
+    }
   };
 
   // 2. Modificar Peso de Preparación (1 a 3)
-  const handleUpdateWeight = (id: number, weight: PrepWeight) => {
+  const handleUpdateWeight = async (id: number, weight: PrepWeight) => {
+    try {
+      await updateWeight(id, weight);
+    } catch (error) {
+      console.error('[LebaWings] No se pudo actualizar peso:', error);
+      return;
+    }
+
     setMenu((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, prep_weight: weight } : item
@@ -111,12 +140,21 @@ export default function App() {
   };
 
   // 3. Crear Nueva Comanda desde App de Meseros
-  const handleOrderCreated = (newOrder: Order) => {
-    setOrders((prev) => [newOrder, ...prev]);
+  const handleOrderCreated = async (newOrder: Order) => {
+    await createOrder(newOrder);
+    const remoteOrders = await getKitchenQueue();
+    setOrders(remoteOrders);
   };
 
   // 4. Actualizar Estado en Cocina (pending -> in_prep -> ready -> delivered)
-  const handleUpdateOrderStatus = (orderId: number, newStatus: OrderStatus) => {
+  const handleUpdateOrderStatus = async (orderId: number, newStatus: OrderStatus) => {
+    try {
+      await updateOrderStatus(orderId, newStatus);
+    } catch (error) {
+      console.error('[LebaWings] No se pudo actualizar estado:', error);
+      return;
+    }
+
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
