@@ -39,6 +39,20 @@ export default function App() {
   const [menu, setMenu] = useState<MenuItem[]>(INITIAL_MENU);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
 
+  const refreshKitchenQueue = async () => {
+    try {
+      const remoteOrders = await getKitchenQueue();
+      setOrders((currentOrders) => {
+        const inactiveOrders = currentOrders.filter(
+          (order) => order.status !== 'pending' && order.status !== 'in_prep'
+        );
+        return [...remoteOrders, ...inactiveOrders];
+      });
+    } catch (error) {
+      console.error('[LebaWings] No se pudo actualizar la cola de cocina:', error);
+    }
+  };
+
   useEffect(() => {
     const loadRemoteData = async () => {
       try {
@@ -52,6 +66,11 @@ export default function App() {
     };
 
     loadRemoteData();
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(refreshKitchenQueue, 5000);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   // Manejar Login / Cambio de Rol
@@ -142,8 +161,7 @@ export default function App() {
   // 3. Crear Nueva Comanda desde App de Meseros
   const handleOrderCreated = async (newOrder: Order) => {
     await createOrder(newOrder);
-    const remoteOrders = await getKitchenQueue();
-    setOrders(remoteOrders);
+    await refreshKitchenQueue();
   };
 
   // 4. Actualizar Estado en Cocina (pending -> in_prep -> ready -> delivered)
@@ -371,6 +389,7 @@ export default function App() {
             orders={orders}
             onUpdateOrderStatus={handleUpdateOrderStatus}
             onToggleItemDone={handleToggleItemDone}
+            onRefresh={refreshKitchenQueue}
           />
         )}
 
