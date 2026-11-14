@@ -90,6 +90,16 @@ class OrderController {
         ]);
     }
 
+    public function history(): void {
+        $from = isset($_GET['from']) ? trim($_GET['from']) : null;
+        $to = isset($_GET['to']) ? trim($_GET['to']) : null;
+
+        $this->jsonResponse([
+            'success' => true,
+            'data' => $this->orderModel->getHistory($from, $to)
+        ]);
+    }
+
     /**
      * PATCH /api/orders/{id}/status
      * Actualiza estado de preparación en cocina.

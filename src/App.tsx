@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { INITIAL_MENU, INITIAL_ORDERS } from './data/initialData';
 import { MenuItem, Order, OrderStatus, PrepWeight, UserProfile, UserRole } from './types/restaurant';
-import { createOrder, getKitchenQueue, getMenu, toggleStock, updateOrderStatus, updateWeight } from './services/api';
+import { createOrder, getKitchenQueue, getMenu, getOrderHistory, toggleStock, updateOrderStatus, updateWeight } from './services/api';
 import { KdsView } from './components/KdsView';
 import { WaiterAppSimulator } from './components/WaiterAppSimulator';
 import { AdminInventoryView } from './components/AdminInventoryView';
@@ -56,10 +56,15 @@ export default function App() {
   useEffect(() => {
     const loadRemoteData = async () => {
       try {
-        const [remoteMenu, remoteOrders] = await Promise.all([getMenu(), getKitchenQueue()]);
+        const [remoteMenu, remoteOrders, orderHistory] = await Promise.all([
+          getMenu(),
+          getKitchenQueue(),
+          getOrderHistory(),
+        ]);
         const localMetadata = new Map(INITIAL_MENU.map((item) => [item.id, item]));
         setMenu(remoteMenu.map((item) => ({ ...localMetadata.get(item.id), ...item })));
-        setOrders(remoteOrders);
+        const ordersById = new Map([...orderHistory, ...remoteOrders].map((order) => [order.id, order]));
+        setOrders(Array.from(ordersById.values()));
       } catch (error) {
         console.error('[LebaWings] No se pudo cargar Railway:', error);
       }

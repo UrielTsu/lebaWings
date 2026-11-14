@@ -151,6 +151,37 @@ class Order {
         return $orders;
     }
 
+    public function getHistory(?string $from = null, ?string $to = null): array {
+        $sql = "SELECT * FROM orders WHERE 1=1";
+        $params = [];
+
+        if ($from !== null) {
+            $sql .= " AND created_at >= :from_date";
+            $params[':from_date'] = $from . ' 00:00:00';
+        }
+        if ($to !== null) {
+            $sql .= " AND created_at < DATE_ADD(:to_date, INTERVAL 1 DAY)";
+            $params[':to_date'] = $to . ' 00:00:00';
+        }
+
+        $sql .= " ORDER BY created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $orders = $stmt->fetchAll();
+
+        foreach ($orders as &$order) {
+            $itemStmt = $this->db->prepare("SELECT * FROM order_items WHERE order_id = :order_id");
+            $itemStmt->execute([':order_id' => $order['id']]);
+            $order['items'] = $itemStmt->fetchAll();
+            $order['id'] = (int)$order['id'];
+            $order['total_amount'] = (float)$order['total_amount'];
+            $order['total_weight'] = (int)$order['total_weight'];
+        }
+        unset($order);
+
+        return $orders;
+    }
+
     /**
      * Transición de estado en KDS (pending -> in_prep -> ready -> delivered -> cancelled)
      */

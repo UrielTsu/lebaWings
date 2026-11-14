@@ -88,6 +88,10 @@ try {
         (new OrderController())->kitchenQueue();
     }
 
+    if ($uri === '/api/orders/history' && $method === 'GET') {
+        (new OrderController())->history();
+    }
+
     if (preg_match('#^/api/orders/(\d+)/status$#', $uri, $matches) && ($method === 'PATCH' || $method === 'POST')) {
         (new OrderController())->updateStatus((int)$matches[1]);
     }

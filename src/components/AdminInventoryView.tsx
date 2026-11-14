@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Package,
   Layers,
-  ChefHat
+  ChefHat,
+  Download
 } from 'lucide-react';
 
 interface Props {
@@ -42,6 +43,7 @@ export const AdminInventoryView: React.FC<Props> = ({
   // Estado para filtros de Historial de Pedidos
   const [historyFilter, setHistoryFilter] = useState<'all' | 'delivered' | 'active'>('all');
   const [historySearch, setHistorySearch] = useState('');
+  const [salesPeriod, setSalesPeriod] = useState<'day' | 'week' | 'month'>('day');
 
   // ----------------------------------------------------
   // Métricas del Historial y Costo / Ingreso del Día
@@ -49,8 +51,20 @@ export const AdminInventoryView: React.FC<Props> = ({
   const deliveredOrders = orders.filter((o) => o.status === 'delivered');
   const activeOrders = orders.filter((o) => o.status === 'pending' || o.status === 'in_prep');
 
+  const periodStart = new Date();
+  periodStart.setHours(0, 0, 0, 0);
+  if (salesPeriod === 'week') {
+    periodStart.setDate(periodStart.getDate() - 6);
+  } else if (salesPeriod === 'month') {
+    periodStart.setDate(1);
+  }
+
+  const periodOrders = orders.filter((order) => new Date(order.created_at) >= periodStart);
+  const periodDeliveredOrders = periodOrders.filter((order) => order.status === 'delivered');
+  const periodRevenue = periodDeliveredOrders.reduce((total, order) => total + (order.total_amount || 0), 0);
+
   // Total de ingresos por comandas ya entregadas / cobradas
-  const totalRevenueDelivered = deliveredOrders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
+  const totalRevenueDelivered = periodRevenue;
 
   // Total de ingresos de comandas actualmente en preparación / pendientes
   const totalRevenuePending = activeOrders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
@@ -60,23 +74,23 @@ export const AdminInventoryView: React.FC<Props> = ({
 
   // Ticket promedio
   const avgTicket =
-    deliveredOrders.length > 0 ? totalRevenueDelivered / deliveredOrders.length : 0;
+    periodDeliveredOrders.length > 0 ? totalRevenueDelivered / periodDeliveredOrders.length : 0;
 
   // Tiempo promedio de entrega en minutos para pedidos completados
   const avgDeliveryMinutes =
-    deliveredOrders.length > 0
+    periodDeliveredOrders.length > 0
       ? Math.round(
-          deliveredOrders.reduce((sum, o) => {
+          periodDeliveredOrders.reduce((sum, o) => {
             if (!o.completed_at || !o.created_at) return sum + 18;
             const diff =
               (new Date(o.completed_at).getTime() - new Date(o.created_at).getTime()) / (1000 * 60);
             return sum + Math.max(diff, 1);
-          }, 0) / deliveredOrders.length
+          }, 0) / periodDeliveredOrders.length
         )
       : 0;
 
   // Filtrado de Historial
-  const filteredHistoryOrders = orders.filter((order) => {
+  const filteredHistoryOrders = periodOrders.filter((order) => {
     const matchesStatus =
       historyFilter === 'all'
         ? true
@@ -91,6 +105,29 @@ export const AdminInventoryView: React.FC<Props> = ({
 
     return matchesStatus && matchesSearch;
   });
+
+  const exportSalesCsv = () => {
+    const rows = periodDeliveredOrders.map((order) => [
+      order.id,
+      order.created_at,
+      order.completed_at || '',
+      order.table_number,
+      order.waiter_name,
+      order.total_amount.toFixed(2),
+      order.items.map((item) => `${item.quantity}x ${item.item_name}`).join(' | '),
+    ]);
+    const csv = [
+      ['Folio', 'Pedido', 'Entrega', 'Mesa', 'Mesero', 'Total MXN', 'Productos'],
+      ...rows,
+    ].map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ventas-${salesPeriod}-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // ----------------------------------------------------
   // Filtrado de Inventario
@@ -163,7 +200,7 @@ export const AdminInventoryView: React.FC<Props> = ({
             }`}
           >
             <Receipt className="w-4 h-4" />
-            <span>Historial de Pedidos & Ventas del Día</span>
+                <span>Historial de Pedidos & Ventas</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-100 text-rose-700 font-black">
               ${totalRevenueDelivered.toFixed(0)}
             </span>
@@ -284,6 +321,29 @@ export const AdminInventoryView: React.FC<Props> = ({
 
           {/* Filtros del Historial */}
           <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex p-1 bg-slate-100 rounded-lg border border-slate-200">
+              {(['day', 'week', 'month'] as const).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSalesPeriod(period)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                    salesPeriod === period ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {period === 'day' ? 'Día' : period === 'week' ? 'Semana' : 'Mes'}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={exportSalesCsv}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
+            >
+              <Download className="w-4 h-4" /> Descargar ventas CSV
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="relative flex-1 min-w-[240px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -304,7 +364,7 @@ export const AdminInventoryView: React.FC<Props> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Todas ({orders.length})
+                Todas ({periodOrders.length})
               </button>
               <button
                 onClick={() => setHistoryFilter('delivered')}
@@ -314,7 +374,7 @@ export const AdminInventoryView: React.FC<Props> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Entregadas ({deliveredOrders.length})
+                Entregadas ({periodDeliveredOrders.length})
               </button>
               <button
                 onClick={() => setHistoryFilter('active')}
@@ -324,7 +384,7 @@ export const AdminInventoryView: React.FC<Props> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                En Cocina ({activeOrders.length})
+                En Cocina ({periodOrders.filter((order) => order.status === 'pending' || order.status === 'in_prep').length})
               </button>
             </div>
           </div>

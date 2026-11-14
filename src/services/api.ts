@@ -48,6 +48,24 @@ export async function getKitchenQueue(): Promise<Order[]> {
   }));
 }
 
+export async function getOrderHistory(): Promise<Order[]> {
+  const response = await request<{ data: Order[] }>('/orders/history');
+  return response.data.map((order) => ({
+    ...order,
+    id: Number(order.id),
+    total_amount: Number(order.total_amount),
+    total_weight: Number(order.total_weight),
+    items: (order.items || []).map((item) => ({
+      ...item,
+      id: Number(item.id),
+      menu_item_id: Number(item.menu_item_id),
+      item_weight: Number(item.item_weight) as PrepWeight,
+      quantity: Number(item.quantity),
+      unit_price: Number(item.unit_price),
+    })),
+  }));
+}
+
 export async function toggleStock(id: number, isAvailable: boolean) {
   return request(`/menu/${id}/toggle-stock`, {
     method: 'PATCH',
