@@ -47,6 +47,7 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Normalizar URI eliminando trailing slashes
+$uri = str_replace('\\', '/', $uri ?? '/');
 $uri = rtrim($uri, '/');
 if (empty($uri)) {
     $uri = '/';
@@ -55,7 +56,7 @@ if (empty($uri)) {
 // Router sencillo y de alto rendimiento
 try {
     // 1. Health check
-    if ($uri === '' || $uri === '/api' || $uri === '/api/health') {
+    if ($uri === '/' || $uri === '/api' || $uri === '/api/health') {
         echo json_encode([
             'system' => 'Leba Wings API',
             'version' => '1.0.0',
